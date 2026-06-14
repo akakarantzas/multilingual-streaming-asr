@@ -1,0 +1,11 @@
+{
+  "base_model_id_or_path": "nvidia/nemotron-3.5-asr-streaming-0.6b",
+  "train_manifest": "data/manifests/el_gr_train.jsonl",
+  "val_manifest": "data/manifests/el_gr_val.jsonl",
+  "output_dir": "experiments/finetuning/el_gr_nemotron",
+  "epochs": 3,
+  "batch_size": 1,
+  "learning_rate": 0.00001,
+  "seed": 42,
+  "notes": "Preparation template only. Confirm NeMo/Nemotron fine-tuning API and hardware before training."
+}
