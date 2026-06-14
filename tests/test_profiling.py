@@ -119,6 +119,64 @@ def test_torch_snapshot_uses_cuda_memory(monkeypatch) -> None:
     assert result["memory_total_mb"] == 1024.0
 
 
+def test_concurrency_summary_marks_degraded_when_p95_doubles_baseline() -> None:
+    summary = gpu_metrics._concurrency_summary_from_latencies(
+        stream_count=4,
+        latencies_ms=[100.0, 200.0, 500.0],
+        baseline_p95_latency_ms=200.0,
+        max_memory_allocated_mb=128.0,
+    )
+
+    assert summary["degraded"] is True
+    assert "2x baseline" in summary["degradation_reason"]
+    assert summary["baseline_p95_latency_ms"] == 200.0
+
+
+def test_concurrency_summary_marks_not_degraded_when_under_threshold() -> None:
+    summary = gpu_metrics._concurrency_summary_from_latencies(
+        stream_count=2,
+        latencies_ms=[100.0, 150.0, 180.0],
+        baseline_p95_latency_ms=100.0,
+        max_memory_allocated_mb=None,
+    )
+
+    assert summary["degraded"] is False
+    assert summary["degradation_reason"] is None
+
+
+def test_profile_inference_uses_fake_model_without_profiler(monkeypatch) -> None:
+    calls: list[str] = []
+    times = iter([1.0, 1.1, 2.0, 2.3])
+
+    def fake_model(audio_input):
+        calls.append(audio_input)
+
+    def fake_snapshot():
+        return {
+            "memory_allocated_mb": 64.0,
+            "gpu_utilization_pct": 25.0,
+        }
+
+    monkeypatch.setattr(gpu_metrics.time, "perf_counter", lambda: next(times))
+    monkeypatch.setattr(gpu_metrics, "snapshot", fake_snapshot)
+    monkeypatch.setattr(gpu_metrics, "_torch_profiler_context", lambda: None)
+
+    result = gpu_metrics.profile_inference(
+        model=fake_model,
+        audio_inputs=["a", "b"],
+        label="fake",
+    )
+
+    assert calls == ["a", "b"]
+    assert result["label"] == "fake"
+    assert result["num_inputs"] == 2
+    assert result["per_input_latencies_ms"] == pytest.approx([100.0, 300.0])
+    assert result["avg_latency_ms"] == pytest.approx(200.0)
+    assert result["max_memory_allocated_mb"] == 64.0
+    assert result["avg_gpu_util_pct"] == 25.0
+    assert result["profiler_used"] is False
+
+
 @contextmanager
 def _workspace_temp_dir():
     with tempfile.TemporaryDirectory(
