@@ -59,6 +59,7 @@ class ChunkedASRSession:
         max_buffer_duration_s: float = DEFAULT_MAX_BUFFER_DURATION_S,
         clock: Callable[[], float] = time.perf_counter,
         timestamp_fn: Callable[[], str] | None = None,
+        log_events: bool = True,
     ) -> None:
         if target_lang not in ALLOWED_TARGET_LANGS:
             allowed = ", ".join(sorted(ALLOWED_TARGET_LANGS))
@@ -78,6 +79,7 @@ class ChunkedASRSession:
         self.buffer = RollingAudioBuffer(max_samples=int(sample_rate * max_buffer_duration_s))
         self.clock = clock
         self.timestamp_fn = timestamp_fn or _utc_timestamp
+        self.log_events = log_events
         self.mode = _detect_native_streaming_mode(model)
         self.language_readiness, self.session_warnings = _language_readiness(target_lang)
         self._samples_since_inference = 0
@@ -124,10 +126,11 @@ class ChunkedASRSession:
             "language_readiness": self.language_readiness,
             "warnings": warnings,
         }
-        print(
-            f"[{event['timestamp']}] partial transcript: {event['transcript']} "
-            f"(latency_ms={event['latency_ms']:.2f}, rtf={event['rtf']:.3f}, mode={event['mode']})"
-        )
+        if self.log_events:
+            print(
+                f"[{event['timestamp']}] partial transcript: {event['transcript']} "
+                f"(latency_ms={event['latency_ms']:.2f}, rtf={event['rtf']:.3f}, mode={event['mode']})"
+            )
         return event
 
     def _run_native_streaming(self, audio: np.ndarray, warnings: list[str]) -> str | None:
