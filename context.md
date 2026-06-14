@@ -28,9 +28,11 @@ Model version/revision: TBD — record exact revision/hash after download
 
 Model memory footprint: TBD
 
-Confirmed single-file inference: TBD
+Confirmed single-file inference: [run this script on hardware and fill in manually]
 
-Confirmed target_lang support: TBD
+Confirmed target_lang support: [run this script with en-US and el-GR and fill in manually]
+
+Confirmed Greek exploratory baseline: [only fill after measured run; note el-GR is adaptation-ready]
 
 Confirmed native streaming/cache-aware inference support: TBD
 
