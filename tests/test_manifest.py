@@ -31,6 +31,31 @@ def test_valid_manifest() -> None:
     ]
 
 
+def test_relative_audio_path_resolves_from_manifest_directory() -> None:
+    with _workspace_temp_dir() as temp_dir:
+        manifest_dir = temp_dir / "manifests"
+        sample_dir = temp_dir / "samples"
+        manifest_dir.mkdir()
+        sample_dir.mkdir()
+        audio_file = sample_dir / "sample.wav"
+        audio_file.write_bytes(b"placeholder")
+        manifest_file = manifest_dir / "manifest.jsonl"
+        _write_jsonl(
+            manifest_file,
+            [{"audio_filepath": "../samples/sample.wav", "text": "ground truth"}],
+        )
+
+        rows = load_jsonl_manifest(str(manifest_file))
+
+    assert rows == [
+        {
+            "audio_filepath": str(audio_file),
+            "text": "ground truth",
+            "duration": None,
+        }
+    ]
+
+
 def test_missing_audio_filepath() -> None:
     with _workspace_temp_dir() as temp_dir:
         manifest_file = temp_dir / "manifest.jsonl"

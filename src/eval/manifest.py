@@ -34,6 +34,7 @@ def load_jsonl_manifest(path: str, validate_files: bool = True) -> list[dict]:
                     raw_row,
                     line_number=line_number,
                     validate_files=validate_files,
+                    base_dir=manifest_path.parent,
                 )
             )
     return rows
@@ -43,6 +44,7 @@ def validate_manifest_row(
     row: dict,
     line_number: int | None = None,
     validate_files: bool = True,
+    base_dir: Path | None = None,
 ) -> dict:
     if not isinstance(row, dict):
         raise ValueError(_line_error("expected row to be a dict", line_number))
@@ -61,14 +63,14 @@ def validate_manifest_row(
     if duration is not None and not _is_number(duration):
         raise ValueError(_line_error("duration must be numeric when present", line_number))
 
-    normalized_audio_filepath = str(Path(audio_filepath).expanduser())
-    if validate_files and not Path(normalized_audio_filepath).exists():
+    normalized_audio_path = _resolve_audio_path(audio_filepath, base_dir=base_dir)
+    if validate_files and not normalized_audio_path.exists():
         raise ValueError(
-            _line_error(f"audio_filepath does not exist: {normalized_audio_filepath}", line_number)
+            _line_error(f"audio_filepath does not exist: {normalized_audio_path}", line_number)
         )
 
     return {
-        "audio_filepath": normalized_audio_filepath,
+        "audio_filepath": str(normalized_audio_path),
         "text": text,
         "duration": duration,
     }
@@ -76,6 +78,13 @@ def validate_manifest_row(
 
 def _is_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _resolve_audio_path(audio_filepath: str, base_dir: Path | None = None) -> Path:
+    path = Path(audio_filepath).expanduser()
+    if path.is_absolute() or base_dir is None:
+        return path.resolve(strict=False)
+    return (base_dir / path).resolve(strict=False)
 
 
 def _line_error(message: str, line_number: int | None) -> str:
