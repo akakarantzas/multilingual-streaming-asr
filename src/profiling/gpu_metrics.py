@@ -4,8 +4,11 @@ import subprocess
 import threading
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from statistics import mean
 from typing import Any
+
+from src.asr.infer import _build_transcribe_call
 
 
 NVIDIA_SMI_QUERY = (
@@ -32,7 +35,12 @@ def snapshot() -> dict:
     }
 
 
-def profile_inference(model: Any, audio_inputs: list, label: str) -> dict:
+def profile_inference(
+    model: Any,
+    audio_inputs: list,
+    label: str,
+    target_lang: str | None = None,
+) -> dict:
     limitations = [
         "Local process inference profile; not a production serving benchmark.",
         "GPU utilization snapshots are sampled before, between inputs, and after inference.",
@@ -41,6 +49,7 @@ def profile_inference(model: Any, audio_inputs: list, label: str) -> dict:
     snapshots = [snapshot()]
     per_input_latencies_ms: list[float] = []
     profiler_used = False
+    warnings: list[str] = []
 
     profiler_context = _torch_profiler_context()
     if profiler_context is not None:
@@ -48,12 +57,26 @@ def profile_inference(model: Any, audio_inputs: list, label: str) -> dict:
 
     if profiler_context is None:
         for audio_input in audio_inputs:
-            per_input_latencies_ms.append(_time_model_call(model, audio_input))
+            per_input_latencies_ms.append(
+                _time_model_call(
+                    model=model,
+                    audio_input=audio_input,
+                    target_lang=target_lang,
+                    warnings=warnings,
+                )
+            )
             snapshots.append(snapshot())
     else:
         with profiler_context as profiler:
             for audio_input in audio_inputs:
-                per_input_latencies_ms.append(_time_model_call(model, audio_input))
+                per_input_latencies_ms.append(
+                    _time_model_call(
+                        model=model,
+                        audio_input=audio_input,
+                        target_lang=target_lang,
+                        warnings=warnings,
+                    )
+                )
                 snapshots.append(snapshot())
                 step = getattr(profiler, "step", None)
                 if callable(step):
@@ -72,6 +95,8 @@ def profile_inference(model: Any, audio_inputs: list, label: str) -> dict:
         "avg_gpu_util_pct": _mean_present(item.get("gpu_utilization_pct") for item in snapshots),
         "per_input_latencies_ms": per_input_latencies_ms,
         "profiler_used": profiler_used,
+        "target_lang": target_lang,
+        "warnings": sorted(set(warnings)),
         "limitations": limitations,
     }
 
@@ -80,6 +105,7 @@ def concurrency_test(
     model: Any,
     audio_inputs: list,
     stream_counts: list[int] = [1, 2, 4, 8],
+    target_lang: str | None = None,
 ) -> list[dict]:
     if not stream_counts:
         return []
@@ -92,7 +118,12 @@ def concurrency_test(
         "May not represent independent production streams.",
         "Uses the same loaded model across threads; if the model is not thread-safe, results are invalid.",
     ]
-    baseline_latencies = _run_concurrent_streams(model, audio_inputs, stream_count=1)
+    baseline_latencies = _run_concurrent_streams(
+        model=model,
+        audio_inputs=audio_inputs,
+        stream_count=1,
+        target_lang=target_lang,
+    )
     baseline_p95 = _percentile(baseline_latencies, 95)
 
     results: list[dict] = []
@@ -100,7 +131,12 @@ def concurrency_test(
         latencies = (
             baseline_latencies
             if stream_count == 1
-            else _run_concurrent_streams(model, audio_inputs, stream_count=stream_count)
+            else _run_concurrent_streams(
+                model=model,
+                audio_inputs=audio_inputs,
+                stream_count=stream_count,
+                target_lang=target_lang,
+            )
         )
         summary = _concurrency_summary_from_latencies(
             stream_count=stream_count,
@@ -146,7 +182,12 @@ def _torch_snapshot() -> dict:
     }
 
 
-def _run_concurrent_streams(model: Any, audio_inputs: list, stream_count: int) -> list[float]:
+def _run_concurrent_streams(
+    model: Any,
+    audio_inputs: list,
+    stream_count: int,
+    target_lang: str | None = None,
+) -> list[float]:
     latencies: list[float] = []
     errors: list[BaseException] = []
     lock = threading.Lock()
@@ -155,7 +196,14 @@ def _run_concurrent_streams(model: Any, audio_inputs: list, stream_count: int) -
         local_latencies: list[float] = []
         try:
             for audio_input in audio_inputs:
-                local_latencies.append(_time_model_call(model, audio_input))
+                local_latencies.append(
+                    _time_model_call(
+                        model=model,
+                        audio_input=audio_input,
+                        target_lang=target_lang,
+                        warnings=[],
+                    )
+                )
         except BaseException as exc:
             with lock:
                 errors.append(exc)
@@ -215,18 +263,43 @@ def _degradation_status(
     return False, None
 
 
-def _time_model_call(model: Any, audio_input: Any) -> float:
+def _time_model_call(
+    model: Any,
+    audio_input: Any,
+    target_lang: str | None = None,
+    warnings: list[str] | None = None,
+) -> float:
     start = time.perf_counter()
-    _run_model_inference(model, audio_input)
+    _run_model_inference(
+        model=model,
+        audio_input=audio_input,
+        target_lang=target_lang,
+        warnings=warnings,
+    )
     return (time.perf_counter() - start) * 1000
 
 
-def _run_model_inference(model: Any, audio_input: Any) -> Any:
+def _run_model_inference(
+    model: Any,
+    audio_input: Any,
+    target_lang: str | None = None,
+    warnings: list[str] | None = None,
+) -> Any:
     if callable(model):
         return model(audio_input)
+
     transcribe = getattr(model, "transcribe", None)
     if callable(transcribe):
+        if target_lang is not None:
+            transcribe_call, _target_lang_support = _build_transcribe_call(
+                transcribe=transcribe,
+                audio_file=Path(audio_input),
+                target_lang=target_lang,
+                warnings=warnings if warnings is not None else [],
+            )
+            return transcribe(*transcribe_call.args, **transcribe_call.kwargs)
         return transcribe([audio_input])
+
     raise RuntimeError("Model must be callable or expose a callable transcribe() method.")
 
 

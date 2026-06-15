@@ -177,6 +177,38 @@ def test_profile_inference_uses_fake_model_without_profiler(monkeypatch) -> None
     assert result["profiler_used"] is False
 
 
+def test_profile_inference_uses_transcribe_adapter_with_target_lang(monkeypatch) -> None:
+    calls: list[tuple[list[str], str]] = []
+    times = iter([1.0, 1.25])
+
+    class FakeModel:
+        def transcribe(self, paths2audio_files, target_lang):
+            calls.append((paths2audio_files, target_lang))
+            return ["transcript"]
+
+    def fake_snapshot():
+        return {
+            "memory_allocated_mb": 64.0,
+            "gpu_utilization_pct": 25.0,
+        }
+
+    monkeypatch.setattr(gpu_metrics.time, "perf_counter", lambda: next(times))
+    monkeypatch.setattr(gpu_metrics, "snapshot", fake_snapshot)
+    monkeypatch.setattr(gpu_metrics, "_torch_profiler_context", lambda: None)
+
+    result = gpu_metrics.profile_inference(
+        model=FakeModel(),
+        audio_inputs=["sample.wav"],
+        label="el:el-GR",
+        target_lang="el-GR",
+    )
+
+    assert calls == [(["sample.wav"], "el-GR")]
+    assert result["target_lang"] == "el-GR"
+    assert result["warnings"] == []
+    assert result["per_input_latencies_ms"] == pytest.approx([250.0])
+
+
 @contextmanager
 def _workspace_temp_dir():
     with tempfile.TemporaryDirectory(

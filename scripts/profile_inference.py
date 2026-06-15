@@ -66,12 +66,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             model=model,
             audio_inputs=audio_inputs,
             label=f"{args.language}:{args.target_lang}",
+            target_lang=args.target_lang,
         )
         gpu_snapshots.append(snapshot())
         concurrency_summary = concurrency_test(
             model=model,
             audio_inputs=audio_inputs,
             stream_counts=stream_counts,
+            target_lang=args.target_lang,
         )
         gpu_snapshots.append(snapshot())
 

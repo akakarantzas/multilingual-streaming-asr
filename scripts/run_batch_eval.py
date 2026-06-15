@@ -41,7 +41,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--language",
         required=True,
         choices=LANGUAGE_CHOICES,
-        help="Evaluation language. Cantonese/Yue is intentionally disabled for now.",
+        help="Evaluation language. Cantonese (Yue) is intentionally disabled for now.",
     )
     parser.add_argument(
         "--target-lang",
@@ -243,7 +243,7 @@ def language_readiness_for(language: str) -> tuple[str, list[str]]:
     if language == "yue":
         return (
             "future_extension_disabled",
-            ["Cantonese/Yue CER is implemented but not enabled for the core milestone."],
+            ["Cantonese (Yue) CER is implemented but not enabled for the core milestone."],
         )
     raise ValueError(f"Unsupported language: {language}")
 
@@ -310,7 +310,14 @@ def _validate_language_target(language: str, target_lang: str) -> None:
 def _attach_metric_to_rows(per_file_rows: list[dict], summary: dict) -> None:
     metric_name = summary["metric_name"]
     for row in per_file_rows:
-        row[metric_name] = summary["metric_value"]
+        reference = str(row["reference_text"])
+        hypothesis = str(row["hypothesis_text"])
+        if metric_name == "wer":
+            row[metric_name] = compute_wer([reference], [hypothesis])["wer"]
+        elif metric_name == "cer":
+            row[metric_name] = compute_cer([reference], [hypothesis])["cer"]
+        else:
+            raise ValueError(f"Unsupported metric_name: {metric_name}")
 
 
 def _coerce_float(value: Any) -> float | None:

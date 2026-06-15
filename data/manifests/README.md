@@ -23,7 +23,7 @@ Example Greek row:
 
 Greek `el-GR` is adaptation-ready/exploratory until fine-tuning and evaluation results are measured.
 
-Future Cantonese/Yue example, not part of the current English/Greek core milestone:
+Future Cantonese (Yue) example, not part of the current English/Greek core milestone:
 
 ```json
 {"audio_filepath": "data/samples/yue_hk_sample.wav", "text": "呢個係粵語參考文本。", "duration": 3.8}
