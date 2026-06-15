@@ -10,6 +10,7 @@ import numpy as np
 
 DEFAULT_SAMPLE_RATE = 16000
 DEFAULT_CHUNK_SIZE = 1600
+_STOP_SENTINEL = object()
 
 
 class MicrophoneAudioStream:
@@ -23,7 +24,7 @@ class MicrophoneAudioStream:
         self.sample_rate = sample_rate
         self.chunk_size = chunk_size
         self.device = device
-        self._queue: queue.Queue[np.ndarray] = queue.Queue(maxsize=max_queue_chunks)
+        self._queue: queue.Queue[np.ndarray | object] = queue.Queue(maxsize=max_queue_chunks)
         self._stream: Any | None = None
         self._closed = True
 
@@ -55,8 +56,13 @@ class MicrophoneAudioStream:
 
     def chunks(self) -> Iterator[np.ndarray]:
         try:
-            while not self._closed:
-                yield self._queue.get()
+            while True:
+                if self._closed and self._queue.empty():
+                    return
+                item = self._queue.get()
+                if item is _STOP_SENTINEL:
+                    return
+                yield item
         except KeyboardInterrupt:
             print("Microphone capture interrupted by user.", file=sys.stderr)
             self.close()
@@ -64,6 +70,7 @@ class MicrophoneAudioStream:
 
     def close(self) -> None:
         self._closed = True
+        self._wake_consumers()
         if self._stream is None:
             return
         self._stream.stop()
@@ -73,6 +80,8 @@ class MicrophoneAudioStream:
     def _callback(self, indata: np.ndarray, _frames: int, _time_info: Any, status: Any) -> None:
         if status:
             print(f"Microphone stream status: {status}", file=sys.stderr)
+        if self._closed:
+            return
 
         chunk = np.asarray(indata, dtype=np.float32).reshape(-1).copy()
         try:
@@ -83,6 +92,16 @@ class MicrophoneAudioStream:
             except queue.Empty:
                 pass
             self._queue.put_nowait(chunk)
+
+    def _wake_consumers(self) -> None:
+        try:
+            self._queue.put_nowait(_STOP_SENTINEL)
+        except queue.Full:
+            try:
+                self._queue.get_nowait()
+            except queue.Empty:
+                pass
+            self._queue.put_nowait(_STOP_SENTINEL)
 
 
 def microphone_chunks(
