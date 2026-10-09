@@ -1,6 +1,6 @@
 # Multilingual Streaming ASR
 
-A benchmark and evaluation toolkit for NVIDIA Nemotron 3.5 ASR, focused on English and Greek batch and streaming workflows with language-appropriate accuracy metrics, latency, GPU memory, and multi-stream concurrency profiling. Cantonese (Yue) exploration and adaptation are planned, pending data and model validation.
+A benchmark and evaluation toolkit for NVIDIA Nemotron 3.5 ASR, focused on Greek batch and streaming workflows with language-appropriate accuracy metrics, latency, GPU memory, and multi-stream concurrency profiling. Cantonese (Yue) exploration and adaptation are planned, pending data and model validation.
 
 Target model: `nvidia/nemotron-3.5-asr-streaming-0.6b`
 
@@ -18,7 +18,6 @@ Status: pre-baseline. Environment checks and pipeline scaffolding are present; m
 - [x] Profiling scaffold
 - [ ] Confirm CUDA, PyTorch, and NeMo versions on target hardware
 - [ ] Record exact model revision
-- [ ] Run English baseline
 - [ ] Run Greek baseline
 - [ ] Validate Cantonese (Yue) dataset readiness
 - [ ] Validate Cantonese (Yue) model behavior
@@ -65,7 +64,6 @@ python -m pip install -r requirements.txt
 
 ## Supported Languages
 
-- English: baseline evaluation scaffolded with WER
 - Greek: baseline evaluation and fine-tuning scaffolding in progress with WER
 - Cantonese (Yue): exploration and adaptation planned; metric TBD, likely CER or mixed WER/CER depending on transcript format
 
@@ -83,22 +81,20 @@ python scripts/smoke_load_model.py
 Run evaluation:
 
 ```bash
-python scripts/run_batch_eval.py --manifest data/manifests/en.jsonl --language en --target-lang en-US --output experiments/baseline/en_results.csv
 python scripts/run_batch_eval.py --manifest data/manifests/el.jsonl --language el --target-lang el-GR --output experiments/baseline/el_results.csv
 ```
 
 Run the streaming demo:
 
 ```bash
-python scripts/run_streaming_demo.py --language en --target-lang en-US
 python scripts/run_streaming_demo.py --language el --target-lang el-GR
 ```
 
 Profile and plot:
 
 ```bash
-python scripts/profile_inference.py --manifest data/manifests/en.jsonl --language en --target-lang en-US --output-dir experiments/baseline/profile_en
-python scripts/make_benchmark_plots.py --input-dir experiments/baseline/profile_en --output-dir reports/figures
+python scripts/profile_inference.py --manifest data/manifests/el.jsonl --language el --target-lang el-GR --output-dir experiments/baseline/profile_el
+python scripts/make_benchmark_plots.py --input-dir experiments/baseline/profile_el --output-dir reports/figures
 ```
 
 Run tests:
@@ -112,7 +108,7 @@ pytest
 Evaluation manifests are JSONL files:
 
 ```json
-{"audio_filepath": "data/samples/en_us_sample.wav", "text": "Reference transcript.", "duration": 3.2}
+{"audio_filepath": "data/samples/el_gr_sample.wav", "text": "Reference transcript.", "duration": 3.2}
 ```
 
 Audio format expectations are currently TBD. Validation for sample rate, channels, and supported formats should be finalized before benchmark results are treated as final.

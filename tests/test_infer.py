@@ -36,13 +36,6 @@ def test_extract_transcript_rejects_unknown_result_type() -> None:
         extract_transcript_text(object())
 
 
-def test_language_readiness_marks_english_as_transcription_ready() -> None:
-    warnings: list[str] = []
-
-    assert _language_readiness("en-US", warnings) == "transcription_ready"
-    assert warnings == []
-
-
 def test_language_readiness_warns_for_greek_exploratory_use() -> None:
     warnings: list[str] = []
 

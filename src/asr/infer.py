@@ -17,14 +17,14 @@ from src.asr.model_loader import (
 
 DEFAULT_OUTPUT_PATH = "experiments/baseline/single_file_result.json"
 ALLOWED_AUDIO_SUFFIXES = {".wav", ".flac"}
-ALLOWED_TARGET_LANGS = {"en-US", "en-GB", "el-GR", "auto"}
+ALLOWED_TARGET_LANGS = {"el-GR", "auto"}
 
 
 def run_single_file_inference(
     audio_path: str,
     model_id_or_path: str,
     output_path: str | None = None,
-    target_lang: str = "en-US",
+    target_lang: str = "el-GR",
     device: str = "cuda",
 ) -> dict:
     audio_file = _validate_audio_path(audio_path)
@@ -96,7 +96,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--target-lang",
-        default="en-US",
+        default="el-GR",
         choices=sorted(ALLOWED_TARGET_LANGS),
         help="Initial target language hint.",
     )
@@ -174,8 +174,6 @@ def _validate_target_lang(target_lang: str) -> None:
 
 
 def _language_readiness(target_lang: str, warnings: list[str]) -> str:
-    if target_lang in {"en-US", "en-GB"}:
-        return "transcription_ready"
     if target_lang == "el-GR":
         warnings.append(
             "Greek el-GR is adaptation-ready; quality is not confirmed until "

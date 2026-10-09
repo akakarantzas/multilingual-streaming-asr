@@ -48,7 +48,7 @@ def test_chunked_session_emits_event_with_rtf_and_metadata() -> None:
     session = ChunkedASRSession(
         model=model,
         sample_rate=10,
-        target_lang="en-US",
+        target_lang="el-GR",
         inference_interval_s=0.2,
         max_buffer_duration_s=1.0,
         clock=lambda: next(clock_values),
@@ -64,9 +64,9 @@ def test_chunked_session_emits_event_with_rtf_and_metadata() -> None:
     assert event["rtf"] == pytest.approx(1.0)
     assert event["audio_duration_s"] == 0.2
     assert event["mode"] == "chunked_fallback"
-    assert event["target_lang"] == "en-US"
-    assert event["language_readiness"] == "transcription_ready"
-    assert model.calls[0]["target_lang"] == "en-US"
+    assert event["target_lang"] == "el-GR"
+    assert event["language_readiness"] == "adaptation_ready"
+    assert model.calls[0]["target_lang"] == "el-GR"
 
 
 def test_chunked_session_waits_until_inference_interval() -> None:

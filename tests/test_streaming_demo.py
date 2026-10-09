@@ -13,13 +13,13 @@ from src.asr.model_loader import DEFAULT_MODEL_ID
 
 def test_parser_defaults() -> None:
     parser = build_arg_parser()
-    args = parser.parse_args(["--language", "en"])
+    args = parser.parse_args(["--language", "el"])
 
     assert args.model_id_or_path == DEFAULT_MODEL_ID
     assert args.chunk_ms == 100
     assert args.inference_window_ms == 1000
-    assert args.language == "en"
-    assert args.target_lang == "en-US"
+    assert args.language == "el"
+    assert args.target_lang == "el-GR"
     assert args.device == "cuda"
     assert args.max_seconds is None
 
@@ -82,7 +82,7 @@ def test_summarize_session_handles_no_events() -> None:
     assert summary["avg_rtf"] is None
 
 
-def test_language_target_validation_rejects_greek_with_english_target() -> None:
+def test_language_target_validation_rejects_greek_with_non_greek_target() -> None:
     with pytest.raises(ValueError, match="Greek"):
         validate_language_target("el", "en-US")
 

@@ -16,8 +16,8 @@ from src.asr.streaming_asr import ChunkedASRSession  # noqa: E402
 from src.audio.microphone import DEFAULT_SAMPLE_RATE, MicrophoneAudioStream  # noqa: E402
 
 
-LANGUAGE_CHOICES = ("en", "el")
-TARGET_LANG_CHOICES = ("en-US", "en-GB", "el-GR", "auto")
+LANGUAGE_CHOICES = ("el",)
+TARGET_LANG_CHOICES = ("el-GR", "auto")
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -50,7 +50,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--target-lang",
         choices=TARGET_LANG_CHOICES,
-        default="en-US",
+        default="el-GR",
         help="Target language hint for ASR when supported.",
     )
     parser.add_argument(
@@ -173,8 +173,6 @@ def print_session_summary(summary: dict) -> None:
 
 
 def validate_language_target(language: str, target_lang: str) -> None:
-    if language == "en" and target_lang not in {"en-US", "en-GB", "auto"}:
-        raise ValueError("English display language should use --target-lang en-US, en-GB, or auto")
     if language == "el" and target_lang not in {"el-GR", "auto"}:
         raise ValueError("Greek display language should use --target-lang el-GR or auto")
 

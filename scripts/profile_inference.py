@@ -16,8 +16,8 @@ from src.eval.manifest import load_jsonl_manifest  # noqa: E402
 from src.profiling.gpu_metrics import concurrency_test, profile_inference, snapshot  # noqa: E402
 
 
-LANGUAGE_CHOICES = ("en", "el")
-TARGET_LANG_CHOICES = ("en-US", "en-GB", "el-GR")
+LANGUAGE_CHOICES = ("el",)
+TARGET_LANG_CHOICES = ("el-GR",)
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -33,9 +33,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--language", required=True, choices=LANGUAGE_CHOICES)
     parser.add_argument(
         "--target-lang",
-        default="en-US",
+        default="el-GR",
         choices=TARGET_LANG_CHOICES,
-        help="Target language hint. Use en-US/en-GB for English and el-GR for Greek.",
+        help="Target language hint. Use el-GR for Greek.",
     )
     parser.add_argument("--output-dir", required=True, help="Directory for benchmark JSON files.")
     parser.add_argument("--device", default="cuda", help='Target device, usually "cuda" or "cpu".')
@@ -98,8 +98,6 @@ def parse_stream_counts(value: str) -> list[int]:
 
 
 def validate_language_target(language: str, target_lang: str) -> None:
-    if language == "en" and target_lang not in {"en-US", "en-GB"}:
-        raise ValueError("English profiling requires --target-lang en-US or en-GB")
     if language == "el" and target_lang != "el-GR":
         raise ValueError("Greek profiling requires --target-lang el-GR")
 

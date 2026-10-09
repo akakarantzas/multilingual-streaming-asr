@@ -26,7 +26,7 @@ def test_parse_stream_counts_rejects_non_positive() -> None:
         parse_stream_counts("1,0")
 
 
-def test_validate_language_target_rejects_greek_english_target() -> None:
+def test_validate_language_target_rejects_greek_with_non_greek_target() -> None:
     with pytest.raises(ValueError, match="Greek"):
         validate_language_target("el", "en-US")
 

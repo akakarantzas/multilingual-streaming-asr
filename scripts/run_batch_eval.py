@@ -23,8 +23,8 @@ from src.eval.manifest import load_jsonl_manifest
 from src.eval.wer import compute_wer
 
 
-LANGUAGE_CHOICES = ("en", "el")
-TARGET_LANG_CHOICES = ("en-US", "en-GB", "el-GR")
+LANGUAGE_CHOICES = ("el",)
+TARGET_LANG_CHOICES = ("el-GR",)
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -45,7 +45,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--target-lang",
-        default="en-US",
+        default="el-GR",
         choices=TARGET_LANG_CHOICES,
         help="Target language hint passed to inference when supported.",
     )
@@ -193,7 +193,7 @@ def build_summary(
     references = [str(row["reference_text"]) for row in per_file_rows]
     hypotheses = [str(row["hypothesis_text"]) for row in per_file_rows]
 
-    if language in {"en", "el"}:
+    if language == "el":
         metric = compute_wer(references, hypotheses)
         metric_name = "wer"
         metric_value = metric["wer"]
@@ -230,8 +230,6 @@ def build_summary(
 
 
 def language_readiness_for(language: str) -> tuple[str, list[str]]:
-    if language == "en":
-        return "transcription_ready", []
     if language == "el":
         return (
             "adaptation_ready",
@@ -299,8 +297,6 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _validate_language_target(language: str, target_lang: str) -> None:
-    if language == "en" and target_lang not in {"en-US", "en-GB"}:
-        raise ValueError("English evaluation requires --target-lang en-US or en-GB")
     if language == "el" and target_lang != "el-GR":
         raise ValueError("Greek evaluation requires --target-lang el-GR")
     if language not in LANGUAGE_CHOICES:

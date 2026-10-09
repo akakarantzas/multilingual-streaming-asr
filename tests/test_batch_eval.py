@@ -8,7 +8,7 @@ from scripts.run_batch_eval import (
 )
 
 
-def test_build_summary_computes_english_wer_and_latency_stats() -> None:
+def test_build_summary_computes_greek_wer_and_latency_stats() -> None:
     rows = [
         {
             "reference_text": "hello world",
@@ -24,10 +24,10 @@ def test_build_summary_computes_english_wer_and_latency_stats() -> None:
 
     summary = build_summary(
         per_file_rows=rows,
-        language="en",
+        language="el",
         model_id_or_path="model",
-        target_lang="en-US",
-        language_readiness="transcription_ready",
+        target_lang="el-GR",
+        language_readiness="adaptation_ready",
         manifest_path="manifest.jsonl",
         warnings=[],
     )

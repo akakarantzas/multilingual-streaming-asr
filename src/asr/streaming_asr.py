@@ -54,7 +54,7 @@ class ChunkedASRSession:
         self,
         model: Any,
         sample_rate: int = DEFAULT_SAMPLE_RATE,
-        target_lang: str = "en-US",
+        target_lang: str = "el-GR",
         inference_interval_s: float = DEFAULT_INFERENCE_INTERVAL_S,
         max_buffer_duration_s: float = DEFAULT_MAX_BUFFER_DURATION_S,
         clock: Callable[[], float] = time.perf_counter,
@@ -240,8 +240,6 @@ def _native_streaming_method(model: Any) -> Any | None:
 
 
 def _language_readiness(target_lang: str) -> tuple[str, list[str]]:
-    if target_lang in {"en-US", "en-GB"}:
-        return "transcription_ready", []
     if target_lang == "el-GR":
         return (
             "adaptation_ready",
