@@ -1,5 +1,7 @@
 # Multilingual Streaming ASR
 
+[![tests](https://github.com/akakarantzas/multilingual-streaming-asr/actions/workflows/tests.yml/badge.svg)](https://github.com/akakarantzas/multilingual-streaming-asr/actions/workflows/tests.yml)
+
 A benchmark and evaluation toolkit for NVIDIA Nemotron 3.5 ASR, focused on Greek batch and streaming workflows with language-appropriate accuracy metrics, latency, GPU memory, and multi-stream concurrency profiling. Cantonese (Yue) exploration and adaptation are planned, pending data and model validation.
 
 Target model: `nvidia/nemotron-3.5-asr-streaming-0.6b`
