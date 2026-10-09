@@ -15,7 +15,6 @@
 - [ ] WER implemented and tested
 - [ ] CER implemented and tested
 - [ ] manifest validator implemented
-- [ ] English test manifest created
 - [ ] Greek test manifest created and labeled adaptation-ready/exploratory
 - [ ] normalized baseline WER table generated
 - [ ] raw/cased/punctuated scoring TODO documented
@@ -30,7 +29,7 @@
 
 ## Milestone 3 - Cantonese/Yue Evaluation, Deferred Extension
 
-- [ ] do not start until English/Greek pipeline and Greek fine-tuning are complete
+- [ ] do not start until Greek pipeline and Greek fine-tuning are complete
 - [ ] model/tokenizer compatibility checked
 - [ ] recording consent documented
 - [ ] sentence list prepared
@@ -62,7 +61,7 @@
 
 ## Milestone 7 - Portfolio Packaging
 
-- [ ] README complete with English baseline vs Greek adaptation framing
+- [ ] README complete with Greek base-model baseline vs fine-tuned framing
 - [ ] technical report complete
 - [ ] plots saved
 - [ ] demo video recorded

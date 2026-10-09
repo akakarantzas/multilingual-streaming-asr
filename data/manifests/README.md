@@ -9,12 +9,6 @@ Required fields:
 Optional fields:
 - `duration`: numeric duration in seconds, when known.
 
-Example English row:
-
-```json
-{"audio_filepath": "data/samples/en_us_sample.wav", "text": "This is an English reference transcript.", "duration": 3.2}
-```
-
 Example Greek row:
 
 ```json
@@ -23,7 +17,7 @@ Example Greek row:
 
 Greek `el-GR` is adaptation-ready/exploratory until fine-tuning and evaluation results are measured.
 
-Future Cantonese (Yue) example, not part of the current English/Greek core milestone:
+Future Cantonese (Yue) example, not part of the current Greek core milestone:
 
 ```json
 {"audio_filepath": "data/samples/yue_hk_sample.wav", "text": "呢個係粵語參考文本。", "duration": 3.8}
