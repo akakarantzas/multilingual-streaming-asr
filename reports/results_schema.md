@@ -6,7 +6,8 @@ Planned per-file CSV fields:
 - `hypothesis_text`
 - `language`
 - `language_readiness`
-- `wer`
+- `wer` (accents counted)
+- `wer_no_accents`
 - `cer`
 - `latency_ms`
 - `gpu_memory_allocated_mb`
@@ -20,7 +21,8 @@ Planned summary JSON fields:
 - `language`
 - `manifest_path`
 - `num_files`
-- `wer`
+- `wer` (accents counted, headline)
+- `wer_no_accents`
 - `cer`
 - `total_words`
 - `total_chars`

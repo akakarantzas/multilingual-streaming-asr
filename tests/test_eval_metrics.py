@@ -106,3 +106,29 @@ def test_cer_cantonese_spaces_stripped() -> None:
 def test_cer_mismatched_list_lengths_raise_value_error() -> None:
     with pytest.raises(ValueError, match="same length"):
         compute_cer(["你好"], ["你好", "世界"])
+
+
+def test_wer_greek_final_sigma_and_case_do_not_count_as_errors() -> None:
+    result = compute_wer(["ΚΑΛΗΜΈΡΑ ΚΌΣΜΟΣ"], ["καλημέρα κόσμοσ"])
+
+    assert result["wer"] == 0.0
+
+
+def test_wer_greek_accents_counted_by_default() -> None:
+    result = compute_wer(["πότε έρχεσαι"], ["ποτε έρχεσαι"])
+
+    assert result["substitutions"] == 1
+    assert result["wer"] == 0.5
+
+
+def test_wer_greek_accent_insensitive_mode() -> None:
+    result = compute_wer(["πότε έρχεσαι"], ["ποτε ερχεσαι"], strip_accents=True)
+
+    assert result["wer"] == 0.0
+    assert "strip Greek accents" in result["normalization"]
+
+
+def test_wer_greek_punctuation_is_ignored() -> None:
+    result = compute_wer(["«Καλημέρα», είπε· πότε;"], ["καλημέρα είπε πότε"])
+
+    assert result["wer"] == 0.0

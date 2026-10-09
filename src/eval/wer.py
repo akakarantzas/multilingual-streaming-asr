@@ -8,16 +8,22 @@ import jiwer
 
 
 NORMALIZATION_DESCRIPTION = (
-    "unicode NFC, lowercase, strip punctuation by Unicode category, normalize whitespace"
+    "unicode NFC, lowercase, final sigma folded to sigma, strip punctuation by "
+    "Unicode category, normalize whitespace"
 )
+ACCENT_INSENSITIVE_DESCRIPTION = ", strip Greek accents (tonos, dialytika)"
 
 
-def compute_wer(references: list[str], hypotheses: list[str]) -> dict:
+def compute_wer(
+    references: list[str],
+    hypotheses: list[str],
+    strip_accents: bool = False,
+) -> dict:
     if len(references) != len(hypotheses):
         raise ValueError("references and hypotheses must have the same length")
 
-    normalized_references = [_normalize_for_wer(reference) for reference in references]
-    normalized_hypotheses = [_normalize_for_wer(hypothesis) for hypothesis in hypotheses]
+    normalized_references = [_normalize_for_wer(reference, strip_accents) for reference in references]
+    normalized_hypotheses = [_normalize_for_wer(hypothesis, strip_accents) for hypothesis in hypotheses]
 
     # TODO: Add raw/cased/punctuated WER alongside normalized WER for Nemotron
     # punctuation and capitalization analysis.
@@ -30,12 +36,18 @@ def compute_wer(references: list[str], hypotheses: list[str]) -> dict:
         "deletions": int(word_output.deletions),
         "insertions": int(word_output.insertions),
         "total_words": int(total_words),
-        "normalization": NORMALIZATION_DESCRIPTION,
+        "normalization": NORMALIZATION_DESCRIPTION
+        + (ACCENT_INSENSITIVE_DESCRIPTION if strip_accents else ""),
     }
 
 
-def _normalize_for_wer(text: str) -> str:
-    normalized = unicodedata.normalize("NFC", text).lower()
+def _normalize_for_wer(text: str, strip_accents: bool = False) -> str:
+    normalized = unicodedata.normalize("NFC", text).lower().replace("ς", "σ")
+    if strip_accents:
+        decomposed = unicodedata.normalize("NFD", normalized)
+        normalized = unicodedata.normalize(
+            "NFC", "".join(char for char in decomposed if unicodedata.category(char) != "Mn")
+        )
     without_punctuation = "".join(
         " " if _is_punctuation(char) else char for char in normalized
     )

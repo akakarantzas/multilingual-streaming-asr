@@ -115,6 +115,7 @@ def run_batch_eval(
                 "language": language,
                 "language_readiness": language_readiness,
                 "wer": None,
+                "wer_no_accents": None,
                 "cer": None,
                 "latency_ms": _coerce_float(inference_result.get("latency_ms")),
                 "gpu_memory_allocated_mb": _coerce_float(
@@ -197,10 +198,14 @@ def build_summary(
         metric = compute_wer(references, hypotheses)
         metric_name = "wer"
         metric_value = metric["wer"]
+        metric_value_no_accents = compute_wer(
+            references, hypotheses, strip_accents=True
+        )["wer"]
     elif language == "yue":
         metric = compute_cer(references, hypotheses)
         metric_name = "cer"
         metric_value = metric["cer"]
+        metric_value_no_accents = None
     else:
         raise ValueError(f"Unsupported language: {language}")
 
@@ -215,6 +220,9 @@ def build_summary(
         "num_files": len(per_file_rows),
         "metric_name": metric_name,
         "metric_value": float(metric_value),
+        "metric_value_no_accents": (
+            None if metric_value_no_accents is None else float(metric_value_no_accents)
+        ),
         "avg_latency_ms": _mean(latencies),
         "p50_latency_ms": percentile(latencies, 50),
         "p95_latency_ms": percentile(latencies, 95),
@@ -265,6 +273,7 @@ def print_summary(summary: dict) -> None:
         "num_files",
         "metric_name",
         "metric_value",
+        "metric_value_no_accents",
         "avg_latency_ms",
         "substitutions",
         "deletions",
@@ -310,6 +319,9 @@ def _attach_metric_to_rows(per_file_rows: list[dict], summary: dict) -> None:
         hypothesis = str(row["hypothesis_text"])
         if metric_name == "wer":
             row[metric_name] = compute_wer([reference], [hypothesis])["wer"]
+            row["wer_no_accents"] = compute_wer(
+                [reference], [hypothesis], strip_accents=True
+            )["wer"]
         elif metric_name == "cer":
             row[metric_name] = compute_cer([reference], [hypothesis])["cer"]
         else:
