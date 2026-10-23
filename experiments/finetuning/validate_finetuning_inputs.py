@@ -1,38 +1,24 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Sequence
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.asr.model_loader import DEFAULT_MODEL_ID  # noqa: E402
 from src.eval.manifest import load_jsonl_manifest  # noqa: E402
-
-
-REQUIRED_CONFIG_FIELDS = {
-    "base_model_id_or_path",
-    "train_manifest",
-    "val_manifest",
-    "output_dir",
-    "epochs",
-    "batch_size",
-    "learning_rate",
-    "seed",
-    "notes",
-}
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Validate Greek fine-tuning preparation inputs without starting training.",
+        description="Validate Greek fine-tuning manifests without starting training.",
     )
-    parser.add_argument("--config", required=True, help="Path to fine-tuning config JSON.")
+    parser.add_argument("--train-manifest", required=True, help="Path to the train JSONL manifest.")
+    parser.add_argument("--val-manifest", required=True, help="Path to the validation JSONL manifest.")
     return parser
 
 
@@ -40,7 +26,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
     try:
-        result = validate_finetuning_inputs(args.config)
+        result = validate_finetuning_inputs(args.train_manifest, args.val_manifest)
     except ValueError as exc:
         print(f"Fine-tuning input validation failed: {exc}", file=sys.stderr)
         return 1
@@ -55,15 +41,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     return 0
 
 
-def validate_finetuning_inputs(config_path: str) -> dict:
-    config = load_config(config_path)
-    missing_fields = sorted(REQUIRED_CONFIG_FIELDS.difference(config))
-    if missing_fields:
-        raise ValueError(f"Config is missing required fields: {', '.join(missing_fields)}")
-
-    validate_base_model_id_or_path(config["base_model_id_or_path"])
-    train_rows = load_jsonl_manifest(config["train_manifest"], validate_files=True)
-    val_rows = load_jsonl_manifest(config["val_manifest"], validate_files=True)
+def validate_finetuning_inputs(train_manifest: str, val_manifest: str) -> dict:
+    train_rows = load_jsonl_manifest(train_manifest, validate_files=True)
+    val_rows = load_jsonl_manifest(val_manifest, validate_files=True)
 
     warnings: list[str] = []
     if len(train_rows) < 100:
@@ -78,38 +58,6 @@ def validate_finetuning_inputs(config_path: str) -> dict:
         "validation_duration_s": total_duration(val_rows),
         "warnings": warnings,
     }
-
-
-def load_config(config_path: str) -> dict:
-    path = Path(config_path).expanduser()
-    if not path.exists():
-        raise ValueError(f"Config path does not exist: {path}")
-    if not path.is_file():
-        raise ValueError(f"Config path must be a file: {path}")
-    try:
-        config = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Config is not valid JSON: {exc.msg}") from exc
-    if not isinstance(config, dict):
-        raise ValueError("Config JSON must be an object")
-    return config
-
-
-def validate_base_model_id_or_path(base_model_id_or_path: Any) -> None:
-    if not isinstance(base_model_id_or_path, str) or not base_model_id_or_path.strip():
-        raise ValueError("base_model_id_or_path must be a non-empty string")
-    if base_model_id_or_path == DEFAULT_MODEL_ID:
-        return
-
-    path = Path(base_model_id_or_path).expanduser()
-    if not path.exists():
-        raise ValueError(
-            "base_model_id_or_path must be the Nemotron model ID or an existing local .nemo file"
-        )
-    if path.suffix != ".nemo":
-        raise ValueError("Local base_model_id_or_path must end with .nemo")
-    if not path.is_file():
-        raise ValueError("Local base_model_id_or_path must be a .nemo file")
 
 
 def total_duration(rows: list[dict]) -> float | None:

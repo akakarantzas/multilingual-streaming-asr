@@ -16,7 +16,6 @@ numpy
 
 # Evaluation
 jiwer
-pandas
 
 # Plotting
 matplotlib

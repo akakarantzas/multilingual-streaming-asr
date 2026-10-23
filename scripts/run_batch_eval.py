@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import sys
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
-import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -65,16 +65,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--validate-files",
-        dest="validate_files",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         default=True,
-        help="Validate that manifest audio files exist.",
-    )
-    parser.add_argument(
-        "--no-validate-files",
-        dest="validate_files",
-        action="store_false",
-        help="Do not validate that manifest audio files exist.",
+        help="Check that manifest audio files exist (default: on).",
     )
     return parser
 
@@ -137,7 +130,7 @@ def run_batch_eval(
     except BaseException:
         # Keep finished transcripts (also on Ctrl+C); no metrics or summary for a partial run.
         if per_file_rows:
-            pd.DataFrame(per_file_rows).to_csv(output_path, index=False)
+            _write_csv(output_path, per_file_rows)
             print(
                 f"Partial results ({len(per_file_rows)} of {len(manifest_rows)} files) "
                 f"written to {output_path}",
@@ -157,7 +150,7 @@ def run_batch_eval(
     summary["device"] = device
     summary["gpu_name"] = get_gpu_name()
     _attach_metric_to_rows(per_file_rows, summary)
-    pd.DataFrame(per_file_rows).to_csv(output_path, index=False)
+    _write_csv(output_path, per_file_rows)
 
     summary_path = Path(summary_output or f"experiments/baseline/{language}_summary.json")
     summary_path.parent.mkdir(parents=True, exist_ok=True)
@@ -299,6 +292,13 @@ def _attach_metric_to_rows(per_file_rows: list[dict], summary: dict) -> None:
             row[metric_name] = compute_cer([reference], [hypothesis])["cer"]
         else:
             raise ValueError(f"Unsupported metric_name: {metric_name}")
+
+
+def _write_csv(path: Path, rows: list[dict]) -> None:
+    with path.open("w", newline="", encoding="utf-8") as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def _coerce_float(value: Any) -> float | None:

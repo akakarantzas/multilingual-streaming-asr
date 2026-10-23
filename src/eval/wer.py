@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import string
 import unicodedata
 
@@ -57,7 +56,3 @@ def _normalize_for_wer(text: str, strip_accents: bool = False) -> str:
 def _is_punctuation(char: str) -> bool:
     return char in string.punctuation or unicodedata.category(char).startswith("P")
 
-
-if __name__ == "__main__":
-    result = compute_wer(["Hello, world!"], ["hello world"])
-    print(json.dumps(result, indent=2, ensure_ascii=False))

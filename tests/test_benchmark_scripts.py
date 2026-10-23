@@ -11,7 +11,6 @@ from scripts.make_benchmark_plots import (
     has_concurrency_latency_data,
     has_gpu_util_time_series,
     has_latency_distribution_data,
-    has_rtf_chunk_data,
     load_benchmark_artifacts,
 )
 from scripts.profile_inference import parse_stream_counts, validate_language_target
@@ -47,21 +46,18 @@ def test_plot_data_presence_helpers() -> None:
     artifacts = {
         "profile_summary": {
             "per_input_latencies_ms": [1.0, 2.0],
-            "chunk_metrics": [{"chunk_ms": 100, "rtf": 0.4}],
         },
         "gpu_snapshots": [{"gpu_utilization_pct": 50.0}],
         "concurrency_summary": [{"stream_count": 1, "p95_latency_ms": 100.0}],
     }
 
     assert has_latency_distribution_data(artifacts)
-    assert has_rtf_chunk_data(artifacts)
     assert has_gpu_util_time_series(artifacts)
     assert has_concurrency_latency_data(artifacts)
 
 
 def test_missing_plot_data_helpers_return_false() -> None:
     assert not has_latency_distribution_data({})
-    assert not has_rtf_chunk_data({})
     assert not has_gpu_util_time_series({"gpu_snapshots": [{"gpu_utilization_pct": None}]})
     assert not has_concurrency_latency_data({})
 

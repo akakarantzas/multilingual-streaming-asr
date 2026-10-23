@@ -41,7 +41,6 @@
 
 ## Milestone 4 - Profiling and Benchmarking
 
-- [x] latency tracker implemented
 - [x] GPU snapshot implemented
 - [ ] profiling script runs
 - [ ] concurrency simulation runs

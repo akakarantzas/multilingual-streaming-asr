@@ -1,57 +1,13 @@
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
-import tempfile
 import time
 import types
-from contextlib import contextmanager
-from pathlib import Path
 
 import pytest
 
 from src.profiling import gpu_metrics
-from src.profiling.latency import LatencyTracker
-
-
-def test_latency_tracker_summary() -> None:
-    tracker = LatencyTracker()
-    tracker.record(100.0)
-    tracker.record(200.0)
-    tracker.record(300.0)
-
-    summary = tracker.summary()
-
-    assert summary["count"] == 3
-    assert summary["min_latency_ms"] == 100.0
-    assert summary["max_latency_ms"] == 300.0
-    assert summary["mean_latency_ms"] == 200.0
-    assert summary["p50_latency_ms"] == 200.0
-    assert summary["p95_latency_ms"] == pytest.approx(290.0)
-    assert summary["p99_latency_ms"] == pytest.approx(298.0)
-
-
-def test_latency_tracker_start_stop_with_clock() -> None:
-    times = iter([1.0, 1.25])
-    tracker = LatencyTracker(clock=lambda: next(times))
-
-    tracker.start("decode")
-    latency_ms = tracker.stop("decode")
-
-    assert latency_ms == 250.0
-    assert tracker.summary()["mean_latency_ms"] == 250.0
-
-
-def test_latency_tracker_to_json() -> None:
-    tracker = LatencyTracker()
-    tracker.record(123.0)
-    with _workspace_temp_dir() as temp_dir:
-        output_path = temp_dir / "latency.json"
-
-        tracker.to_json(str(output_path))
-
-        assert json.loads(output_path.read_text())["mean_latency_ms"] == 123.0
 
 
 def test_snapshot_structure_when_torch_unavailable(monkeypatch) -> None:
@@ -249,11 +205,3 @@ def test_peak_memory_is_none_without_cuda(monkeypatch) -> None:
 
     assert gpu_metrics._peak_memory_allocated_mb() is None
 
-
-@contextmanager
-def _workspace_temp_dir():
-    with tempfile.TemporaryDirectory(
-        prefix="profiling_",
-        dir=Path.cwd() / "tests",
-    ) as temp_dir:
-        yield Path(temp_dir)

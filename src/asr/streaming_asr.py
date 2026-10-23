@@ -80,7 +80,8 @@ class ChunkedASRSession:
         self.clock = clock
         self.timestamp_fn = timestamp_fn or _utc_timestamp
         self.log_events = log_events
-        self.mode = _detect_native_streaming_mode(model)
+        # Native (cache-aware) streaming is not wired up until the model's API is confirmed.
+        self.mode = "chunked_fallback"
         self.language_readiness, self.session_warnings = _language_readiness(target_lang)
         self._samples_since_inference = 0
         self._event_count = 0
@@ -110,9 +111,7 @@ class ChunkedASRSession:
         warnings = list(self.session_warnings)
 
         start = self.clock()
-        transcript = self._run_native_streaming(audio, warnings)
-        if transcript is None:
-            transcript = self._run_chunked_fallback(audio, warnings)
+        transcript = self._run_chunked_fallback(audio, warnings)
         processing_time_s = self.clock() - start
 
         event = {
@@ -133,31 +132,12 @@ class ChunkedASRSession:
             )
         return event
 
-    def _run_native_streaming(self, audio: np.ndarray, warnings: list[str]) -> str | None:
-        if self.mode != "native_streaming":
-            return None
-
-        streaming_method = _native_streaming_method(self.model)
-        if streaming_method is None:
-            warnings.append(
-                "Native streaming mode was requested but no callable native streaming method was found."
-            )
-            self.mode = "chunked_fallback"
-            return None
-
-        kwargs: dict[str, Any] = {}
-        if call_accepts_parameter(streaming_method, "target_lang"):
-            kwargs["target_lang"] = self.target_lang
-        if call_accepts_parameter(streaming_method, "sample_rate"):
-            kwargs["sample_rate"] = self.sample_rate
-        return extract_transcript_text(streaming_method(audio, **kwargs))
-
     def _run_chunked_fallback(self, audio: np.ndarray, warnings: list[str]) -> str:
         transcribe = getattr(self.model, "transcribe", None)
         if not callable(transcribe):
             raise RuntimeError(
-                "Loaded ASR model does not expose a documented native streaming method or "
-                "model.transcribe() for chunked fallback. Check the installed NeMo/Nemotron "
+                "Loaded ASR model does not expose model.transcribe() for chunked fallback. "
+                "Check the installed NeMo/Nemotron "
                 "3.5 ASR streaming API before running microphone ASR."
             )
 
@@ -214,26 +194,6 @@ def calculate_rtf(processing_time_s: float, audio_duration_s: float) -> float:
     if audio_duration_s <= 0:
         return float("inf")
     return processing_time_s / audio_duration_s
-
-
-def _detect_native_streaming_mode(model: Any) -> str:
-    if _native_streaming_method(model) is not None:
-        return "native_streaming"
-    return "chunked_fallback"
-
-
-def _native_streaming_method(model: Any) -> Any | None:
-    # Conservative detection only. Do not claim native streaming unless the loaded
-    # model exposes a clearly named streaming/cache-aware method.
-    for method_name in (
-        "transcribe_streaming",
-        "streaming_transcribe",
-        "transcribe_stream",
-    ):
-        method = getattr(model, method_name, None)
-        if callable(method):
-            return method
-    return None
 
 
 def _language_readiness(target_lang: str) -> tuple[str, list[str]]:

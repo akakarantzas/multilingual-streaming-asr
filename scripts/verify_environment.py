@@ -33,15 +33,14 @@ class CheckResult:
     name: str
     status: str
     reason: str
-    required: bool = True
 
 
-def pass_check(name: str, reason: str, required: bool = True) -> CheckResult:
-    return CheckResult(name=name, status="PASS", reason=reason, required=required)
+def pass_check(name: str, reason: str) -> CheckResult:
+    return CheckResult(name=name, status="PASS", reason=reason)
 
 
-def fail_check(name: str, reason: str, required: bool = True) -> CheckResult:
-    return CheckResult(name=name, status="FAIL", reason=reason, required=required)
+def fail_check(name: str, reason: str) -> CheckResult:
+    return CheckResult(name=name, status="FAIL", reason=reason)
 
 
 def python_version_string(version_info: tuple[int, int, int] | None = None) -> str:
@@ -222,7 +221,7 @@ def run_nvidia_smi(
 
 
 def overall_status(checks: Iterable[CheckResult]) -> str:
-    return "FAIL" if any(check.required and check.status != "PASS" for check in checks) else "PASS"
+    return "FAIL" if any(check.status != "PASS" for check in checks) else "PASS"
 
 
 def build_report() -> tuple[dict[str, Any], str]:

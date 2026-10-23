@@ -104,22 +104,8 @@ class MicrophoneAudioStream:
             self._queue.put_nowait(_STOP_SENTINEL)
 
 
-def microphone_chunks(
-    sample_rate: int = DEFAULT_SAMPLE_RATE,
-    chunk_size: int = DEFAULT_CHUNK_SIZE,
-    device: int | str | None = None,
-) -> Iterator[np.ndarray]:
-    with MicrophoneAudioStream(
-        sample_rate=sample_rate,
-        chunk_size=chunk_size,
-        device=device,
-    ) as stream:
-        yield from stream.chunks()
-
-
 __all__ = [
     "DEFAULT_CHUNK_SIZE",
     "DEFAULT_SAMPLE_RATE",
     "MicrophoneAudioStream",
-    "microphone_chunks",
 ]

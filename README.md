@@ -73,8 +73,6 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Optional packages that nothing imports yet (experiment tracking, serving, notebooks) are in `requirements-extras.txt`.
-
 ## Supported Languages
 
 - Greek: baseline evaluation and fine-tuning scaffolding in progress with WER
@@ -123,7 +121,7 @@ python scripts/make_benchmark_plots.py --input-dir experiments/baseline/profile_
 Validate fine-tuning inputs (does not start training):
 
 ```bash
-python experiments/finetuning/validate_finetuning_inputs.py --config experiments/finetuning/greek_finetune_config_template.json
+python experiments/finetuning/validate_finetuning_inputs.py --train-manifest data/manifests/el_gr_train.jsonl --val-manifest data/manifests/el_gr_val.jsonl
 ```
 
 Run tests (no GPU needed; `requirements-test.txt` is enough, and CI uses it on Python 3.11 and 3.12):

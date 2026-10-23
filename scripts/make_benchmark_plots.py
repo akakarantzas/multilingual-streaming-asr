@@ -7,11 +7,6 @@ from pathlib import Path
 from typing import Sequence
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Generate benchmark plots from JSON artifacts.")
     parser.add_argument("--input-dir", required=True, help="Directory containing benchmark JSON files.")
@@ -68,7 +63,6 @@ def generate_plots(artifacts: dict, output_dir: Path) -> list[Path]:
 
     generated: list[Path] = []
     generated.extend(_plot_latency_distribution(artifacts, output_dir, plt))
-    generated.extend(_plot_rtf_vs_chunk_size(artifacts, output_dir, plt))
     generated.extend(_plot_gpu_util_over_time(artifacts, output_dir, plt))
     generated.extend(_plot_concurrency_latency(artifacts, output_dir, plt))
     return generated
@@ -76,11 +70,6 @@ def generate_plots(artifacts: dict, output_dir: Path) -> list[Path]:
 
 def has_latency_distribution_data(artifacts: dict) -> bool:
     return bool(artifacts.get("profile_summary", {}).get("per_input_latencies_ms"))
-
-
-def has_rtf_chunk_data(artifacts: dict) -> bool:
-    profile = artifacts.get("profile_summary", {})
-    return bool(profile.get("chunk_metrics"))
 
 
 def has_gpu_util_time_series(artifacts: dict) -> bool:
@@ -103,23 +92,6 @@ def _plot_latency_distribution(artifacts: dict, output_dir: Path, plt) -> list[P
     plt.xlabel("Latency (ms)")
     plt.ylabel("Count")
     plt.title("Per-file Latency Distribution")
-    plt.tight_layout()
-    plt.savefig(path, dpi=150)
-    plt.close()
-    return [path]
-
-
-def _plot_rtf_vs_chunk_size(artifacts: dict, output_dir: Path, plt) -> list[Path]:
-    if not has_rtf_chunk_data(artifacts):
-        print("Skipping rtf_vs_chunk_size.png: missing chunk-size RTF data.")
-        return []
-    rows = artifacts["profile_summary"]["chunk_metrics"]
-    path = output_dir / "rtf_vs_chunk_size.png"
-    plt.figure()
-    plt.plot([row["chunk_ms"] for row in rows], [row["rtf"] for row in rows], marker="o")
-    plt.xlabel("Chunk size (ms)")
-    plt.ylabel("RTF")
-    plt.title("RTF vs Chunk Size")
     plt.tight_layout()
     plt.savefig(path, dpi=150)
     plt.close()
